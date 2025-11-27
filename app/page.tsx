@@ -8,10 +8,7 @@ import Artists from '@/components/sections/Artists';
 export default function Home() {
   return (
     <SiteLayout>
-      {/* Hero Section */}
       <Hero />
-
-      {/* Artists Section */}
       <Artists />
     </SiteLayout>
   );
