@@ -6,7 +6,7 @@
 */
 -- AlterTable
 ALTER TABLE "bookings" DROP COLUMN "eventDate",
-ADD COLUMN     "eventDate" TIMESTAMP(3);
+ADD COLUMN     "eventDate" TIMESTAMP(3) NOT NULL;
 
 -- CreateIndex
 CREATE UNIQUE INDEX "bookings_artistId_eventDate_key" ON "bookings"("artistId", "eventDate");

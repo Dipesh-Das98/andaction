@@ -4,23 +4,20 @@ import React, { forwardRef } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Calendar } from 'lucide-react';
-// this has been changed by ankush we need to fix it later
+
 export interface DateInputProps {
   label?: string;
   error?: string;
   helperText?: string;
   variant?: 'default' | 'filled';
-  disabledDates?: Date[];
-  value?: string | Date | null;
-  onChange?: (e: any) => void;  // ACCEPT BOTH event + date
+  value?: string | null;
+  onChange?: (val: string) => void;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
   id?: string;
   required?: boolean;
-
-  /** optional: force picker or native */
-  mode?: 'native' | 'picker';
+  disabledDates?: Date[];
 }
 
 const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
@@ -34,9 +31,7 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
       id,
       onChange,
       value,
-      mode,
-      disabledDates = [],
-      placeholder = 'Select a date',
+      placeholder = 'DD / MM / YYYY',
       disabled = false,
       required = false,
       ...props
@@ -45,27 +40,43 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
   ) => {
     const inputId = id || `date-input-${Math.random().toString(36).substr(2, 9)}`;
 
-    /** Automatically choose native input for string DOB pattern */
-    const autoMode =
-      mode ??
-      (typeof value === 'string' ? 'native' : 'picker');
+    const selectedDate =
+      value && !isNaN(Date.parse(value))
+        ? new Date(value + "T00:00:00")
+        : null;
 
-    const parsedDate =
-      typeof value === 'string'
-        ? value
-        : value instanceof Date
-        ? value.toISOString().slice(0, 10)
-        : '';
+    const handleChangeRaw = (e: any) => {
+      if (!e?.target || typeof e.target.value !== "string") return;
 
-    /** unified onChange handler */
-    const handleChange = (val: any) => {
-      if (autoMode === 'native') {
-        // send event-like structure to keep OLD code working
-        onChange?.({ target: { value: val.target.value } });
-      } else {
-        // react-datepicker gives Date
-        onChange?.(val);
+      let val = e.target.value.replace(/\D/g, "");
+
+      if (val.length >= 3 && val.length <= 4) {
+        val = val.slice(0, 2) + "/" + val.slice(2);
+      } else if (val.length >= 5) {
+        val = val.slice(0, 2) + "/" + val.slice(2, 4) + "/" + val.slice(4, 8);
       }
+
+      e.target.value = val;
+
+      if (val.length === 10) {
+        const [dd, mm, yyyy] = val.split("/");
+        onChange?.(`${yyyy}-${mm}-${dd}`);
+      }
+    };
+
+
+
+
+    const handlePickerChange = (date: Date | null) => {
+      if (!date) return onChange?.("");
+
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, "0");
+      const dd = String(date.getDate()).padStart(2, "0");
+
+      const formatted = `${yyyy}-${mm}-${dd}`;
+
+      onChange?.(formatted);
     };
 
     const baseClasses = `
@@ -76,14 +87,11 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
     `;
 
     const variantClasses = {
-      default: `bg-[#1B1B1B] border-border-color hover:border-[#404040]`,
-      filled: `bg-card border-border-color hover:border-[#404040]`,
+      default: `bg-[#1B1B1B] border-border-color`,
+      filled: `bg-card border-border-color`,
     };
 
-    const errorClasses = error
-      ? 'border-red-500 focus:border-red-500'
-      : '';
-
+    const errorClasses = error ? 'border-red-500' : '';
     const allClasses = `${baseClasses} ${variantClasses[variant]} ${errorClasses} ${className}`;
 
     return (
@@ -94,42 +102,22 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
           </label>
         )}
 
-        {/* NATIVE INPUT - old behaviour (DOB typing) */}
-        {autoMode === 'native' && (
-          <input
-            ref={ref}
-            id={inputId}
-            type="date"
-            value={parsedDate}
-            onChange={handleChange}
+        <div className="relative">
+          <DatePicker
+            selected={selectedDate}
+            onChange={handlePickerChange}
+            onChangeRaw={handleChangeRaw}
+            placeholderText={placeholder}
             disabled={disabled}
-            required={required}
+            id={inputId}
             className={allClasses}
-            {...props}
+            dateFormat="dd/MM/yyyy"
+            wrapperClassName="w-full"
+            required={required}
           />
-        )}
 
-        {/* REACT DATE PICKER - only used where needed */}
-        {autoMode === 'picker' && (
-          <div className="relative">
-            <DatePicker
-              selected={value instanceof Date ? value : null}
-              onChange={(date) => onChange?.(date)}
-              excludeDates={disabledDates}
-              placeholderText={placeholder}
-              disabled={disabled}
-              id={inputId}
-              className={allClasses}
-              wrapperClassName="w-full"
-              calendarClassName="custom-datepicker"
-              dateFormat="MMM dd, yyyy"
-              showPopperArrow={false}
-              required={required}
-            />
-
-            <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-          </div>
-        )}
+          <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+        </div>
 
         {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
         {helperText && !error && (
