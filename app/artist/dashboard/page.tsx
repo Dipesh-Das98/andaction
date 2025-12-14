@@ -75,26 +75,30 @@ export default function ArtistDashboard() {
      FETCH BOOKINGS
   ---------------------------------------------------- */
   const getBookings = async () => {
-    try {
-      const response = await fetch("/api/bookings");
-      const json = await response.json();
+  try {
+    const response = await fetch("/api/bookings");
+    const json = await response.json();
 
-      const bookingsGrouped = json.data.bookings.reduce(
-        (acc: any, booking: Booking) => {
-          if (!acc[booking.status]) acc[booking.status] = [];
-          acc[booking.status].push(booking);
-          return acc;
-        },
-        { ...defaultBookingsState }
-      );
+    const bookingsGrouped: BookingStatusMap = {
+      PENDING: [],
+      APPROVED: [],
+      DECLINED: [],
+      CANCELLED: [],
+      COMPLETED: [],
+    };
 
-      setBookings(bookingsGrouped);
-    } catch (err) {
-      console.error("Unable to fetch bookings", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    json.data.bookings.forEach((booking: Booking) => {
+      bookingsGrouped[booking.status].push(booking);
+    });
+
+    setBookings(bookingsGrouped);
+  } catch (err) {
+    console.error("Unable to fetch bookings", err);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   /* ----------------------------------------------------
      UPDATE BOOKING STATUS (LOCAL)
