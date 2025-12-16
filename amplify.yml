@@ -7,9 +7,8 @@ frontend:
         - rm -rf node_modules package-lock.json ~/.npm
         - npm install
 
-        # Prisma (added safely)
+        # Prisma: required for AWS runtime
         - npx prisma generate
-        - npx prisma migrate deploy
 
     build:
       commands:
