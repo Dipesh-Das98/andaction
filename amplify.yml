@@ -6,12 +6,19 @@ frontend:
         - echo "Cleaning npm cache"
         - rm -rf node_modules package-lock.json ~/.npm
         - npm install
+
+        # Prisma (added safely)
+        - npx prisma generate
+        - npx prisma migrate deploy
+
     build:
       commands:
         - npm run build
+
   artifacts:
     baseDirectory: .next
     files:
       - '**/*'
+
   cache:
     paths: []
